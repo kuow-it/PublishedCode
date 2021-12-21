@@ -1,0 +1,1 @@
+Remove-AppxPackage -Package "Microsoft.Winget.Source_8wekyb3d8bbwe" -Confirm
