@@ -3,6 +3,7 @@ Modules required
 IntuneWin32App
 AzureAD
 Credit to https://www.petervanderwoude.nl and https://call4cloud.nl/ whose scripts I tweaked for the app upload
+Credit to https://github.com/rothgecw for figuring out how to run winget with the system account
 #>
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -20,6 +21,8 @@ $IntuneButton.Location = New-Object System.Drawing.Point(40,310)
 $IntuneButton.Size = New-Object System.Drawing.Size(120,23)
 $IntuneButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
 $IntuneButton.Text = 'Add to app Intune'
+
+
 
 #Create the cancel button
 $cancelButton = New-Object System.Windows.Forms.Button
@@ -79,7 +82,6 @@ $PublishertextBox = New-Object System.Windows.Forms.TextBox
 $PublishertextBox.Location = New-Object System.Drawing.Point(10,190)
 $PublishertextBox.Size = New-Object System.Drawing.Size(260,20)
 
-
 #Photo Upload Name
 $txtFileName = New-Object System.Windows.Forms.TextBox
 $txtFileName.Location = New-Object System.Drawing.Point(10,240)
@@ -115,13 +117,12 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK)
 
 {
     $WinGetAppId = $WinGettextBox.Text
-    $TenantName = "domainname.onmicrosoft.com"
+    $TenantName = "TENANTNAME"
     $AppDisplayName = $DisplayNametextBox.Text
     $AppDescription = $DescriptiontextBox.Text
     $AppPublisher = $PublishertextBox.Text
 
     $destPath="C:\Temp\Intune Packages\$AppDisplayName"
-    $AppDetectionCode = '$AppDetectionCode'
 
 #Check to see if the folder for the package already exists
     if (Test-Path $destPath) {
@@ -129,17 +130,23 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK)
     }Else{
         New-Item -Path "C:\Temp\Intune Packages\$AppDisplayName" -ItemType directory -Force
 }
+
 #Create the install, uninstall, and detection scripts
-$InstallScript = "winget install --silent --accept-package-agreements --accept-source-agreements $WinGetAppId"
-$DetectionScript= "$AppDetectionCode = winget list --id $WinGetAppId
-If($AppDetectionCode[-1].Contains('$WinGetAppId')){
-Write-Output '$WingetAppId successfully installed'
+$InstallScript = "`$WingetSystemPath = Get-ChildItem -Path 'C:\Program Files\WindowsApps' -Filter 'Microsoft.DesktopAppInstaller_*x64*' | Sort-Object -Property 'LastWriteTime' -Descending | Select-Object -First 1 -ExpandProperty 'FullName'
+Start-Process -FilePath `$wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'install --silent --accept-package-agreements --accept-source-agreements $WinGetAppId'"
+
+$DetectionScript= "`$InstallerRegKey = Get-ChildItem 'HKLM:\SOFTWARE\Classes\Installer\Products' -Recurse | Get-ItemProperty | Where-Object {`$_ -like '*$WingetAppId*'} 
+If( `$InstallerRegKey.PackageName.Contains('$WinGetAppId')){
+Write-Output '$AppDisplayName installed'
 Exit 0
-}else{
-Write-Output '$WingetAppId not installed'
+}Else{
+Write-Output '$AppDisplayName not installed'
 Exit 1
-}"
-$UninstallScript = "winget uninstall --silent $AppDisplayName"
+}
+"
+
+$UninstallScript = "$WingetSystemPath
+Start-Process -FilePath $wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'winget uninstall --silent $AppDisplayName'"
 $InstallScript | Out-File -FilePath "$destPath\Install.ps1"
 $DetectionScript | Out-File -FilePath "$destPath\Detection.ps1" -Encoding utf8
 $UninstallScript | Out-File -FilePath "$destPath\Uninstall.ps1" 
@@ -166,8 +173,7 @@ $Icon = New-IntuneWin32AppIcon -FilePath $txtFileName.Text
 Connect-MSIntuneGraph -TenantName $TenantName
 
 #Add winget app to Intune
-$InstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -Command .\Install.ps1"
-$UninstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -Command .\Uninstall.ps1"
-Add-IntuneWin32App -FilePath "$destPath\Install.intunewin" -DisplayName $AppDisplayName -Description $AppDescription -Publisher $AppPublisher -InstallExperience user -RestartBehavior suppress -DetectionRule $DetectionRule -RequirementRule $RequirementRule -InstallCommandLine $InstallCommandLine -UninstallCommandLine $UninstallCommandLine -Icon $Icon -Verbose
+$InstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -windowstyle hidden -Command .\Install.ps1"
+$UninstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -windowstyle hidden -Command .\Uninstall.ps1"
+Add-IntuneWin32App -FilePath "$destPath\Install.intunewin" -DisplayName $AppDisplayName -Description $AppDescription -Publisher $AppPublisher -InstallExperience system -RestartBehavior suppress -DetectionRule $DetectionRule -RequirementRule $RequirementRule -InstallCommandLine $InstallCommandLine -UninstallCommandLine $UninstallCommandLine -Icon $Icon -Verbose
 }
-
