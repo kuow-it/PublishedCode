@@ -227,7 +227,7 @@ The form will auto populate all the fields from the winget show function. All fi
 
 If the app doesn't provide a privacy or info url I'd suggest just putting NA. The form will autopopulate the script fields with the scripts I've developed. You can change them but they might stop working.
 
-Once you've verified all information you can click 'Upload to Intune'."
+Once you've verified all information you can click 'Upload to Intune'. The default behavior is to deploy to all users as avaiable and supress notifications. You can change this on the Add-IntuneWin32AppAssignmentAllUsers line, or remove that line entirely."
 
     
     $howtoform.controls.AddRange(@($okButton,$howlabel))
