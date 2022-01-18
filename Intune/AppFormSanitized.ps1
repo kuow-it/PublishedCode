@@ -1,11 +1,3 @@
-<#
-Modules required
-IntuneWin32App
-AzureAD
-Credit to https://www.petervanderwoude.nl and https://call4cloud.nl/ whose scripts I tweaked for the app upload
-Credit to https://github.com/rothgecw for figuring out how to run winget with the system account
-#>
-
 
 
 Add-Type -AssemblyName System.Windows.Forms
@@ -327,8 +319,13 @@ $wingetlines = $notgibberish.Split([Environment]::NewLine)
 $AppSearchInfo = New-Object PSObject 
 foreach($wingetline in $wingetlines){
 $errorlabelbox.Items.Add($wingetline)
-$AppPropertyName, $AppPropertyContent = $wingetline -split ':',2
-$AppSearchInfo | Add-Member $AppPropertyName $AppPropertyContent
+$AppPropertyName, $AppPropertyContent = $wingetline -split ': ',2
+try {
+    $AppSearchInfo | Add-Member $AppPropertyName $AppPropertyContent -ErrorAction Ignore  -WarningAction Ignore
+}
+catch {
+    
+}
 
 }
 $appNametextBox.Text = $AppSearchInfo.Name.Split('[')[0]
@@ -359,6 +356,7 @@ $form.Topmost = $true
 $result = $form.ShowDialog()
 
 if ($result -eq [System.Windows.Forms.DialogResult]::OK){
+
     
 }
 
