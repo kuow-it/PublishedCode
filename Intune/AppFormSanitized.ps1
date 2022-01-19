@@ -296,7 +296,7 @@ $Icon = New-IntuneWin32AppIcon -FilePath $icontextBox.Text
 
 #Connect to Intune
 
-Connect-MSIntuneGraph -TenantName $TenantName
+Connect-MSIntuneGraph -TenantID $TenantName
 
 #Add winget app to Intune
 $InstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -windowstyle hidden -Command .\Install.ps1"
@@ -328,7 +328,7 @@ catch {
 }
 
 }
-$appNametextBox.Text = $AppSearchInfo.Name.Split('[')[0]
+$appNametextBox.Text = $AppSearchInfo.Name.Split(' [')[0]
 $infourltextBox.Text = $AppSearchInfo.'Publisher Url'
 $privacyurltextBox.Text = $AppSearchInfo.'Privacy Url'
 $developertextBox.Text = $AppSearchInfo.Publisher
