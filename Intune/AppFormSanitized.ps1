@@ -296,7 +296,7 @@ $Icon = New-IntuneWin32AppIcon -FilePath $icontextBox.Text
 
 #Connect to Intune
 
-Connect-MSIntuneGraph -TenantID $TenantName
+Connect-MSIntuneGraph -TenantName $TenantName
 
 #Add winget app to Intune
 $InstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -windowstyle hidden -Command .\Install.ps1"
@@ -304,6 +304,7 @@ $UninstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -windowstyle hid
 $Win32App = Add-IntuneWin32App -FilePath "$destPath\Install.intunewin" -DisplayName $AppDisplayName -Description $AppDescription -Developer $AppDeveloper -Publisher $AppPublisher -InstallExperience system -RestartBehavior suppress -DetectionRule $DetectionRule -RequirementRule $RequirementRule -PrivacyURL $privacyurl -InformationURL $infourl -InstallCommandLine $InstallCommandLine -UninstallCommandLine $UninstallCommandLine -Icon $Icon -Verbose
 
 Add-IntuneWin32AppAssignmentAllUsers -ID $Win32App.id -Intent "available" -Notification "hideAll"
+$form.Refresh()
 })
 
 #Winget Searchbutton Click Event
@@ -329,19 +330,34 @@ catch {
 
 }
 $appNametextBox.Text = $AppSearchInfo.Name.Split(' [')[0]
-$infourltextBox.Text = $AppSearchInfo.'Publisher Url'
-$privacyurltextBox.Text = $AppSearchInfo.'Privacy Url'
+
+if ([string]::IsNullOrEmpty($AppSearchInfo.'Publisher Url')) {
+    $infourltextBox.Text = $AppSearchInfo.'Publisher Support Url'
+}else {
+    $infourltextBox.Text = $AppSearchInfo.'Publisher Url'
+}
+
+if([string]::IsNullOrEmpty($AppSearchInfo.'Privacy Url')){
+    $privacyurltextBox.Text = $AppSearchInfo.'Publisher Url'
+}elseif([string]::IsNullOrEmpty($AppSearchInfo.'Publisher Url')){
+    $privacyurltextBox.Text = $AppSearchInfo.'Publisher Support Url'
+}else{
+    $privacyurltextBox.Text = $AppSearchInfo.'Privacy Url'
+}
+
 $developertextBox.Text = $AppSearchInfo.Publisher
 $desciptiontextBox.Text = $AppSearchInfo.Description
 $WinGetAppId = $appIDtextBox.Text
 $WinGetAppSplit = $WinGetAppId.Replace('.','*')
 $AppDisplayName = $appNametextBox.Text
 $installscripttextBox.Text = "`$WingetSystemPath = Get-ChildItem -Path 'C:\Program Files\WindowsApps' -Filter 'Microsoft.DesktopAppInstaller_*x64*' | Sort-Object -Property 'LastWriteTime' -Descending | Select-Object -First 1 -ExpandProperty 'FullName'
-Start-Process -FilePath `$wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'install -h --accept-package-agreements --accept-source-agreements $WinGetAppId'"
+Start-Process -FilePath `$wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'install --scope machine -h --accept-package-agreements --accept-source-agreements $WinGetAppId'"
 $uninstalltextBox.Text = "`$WingetSystemPath = Get-ChildItem -Path 'C:\Program Files\WindowsApps' -Filter 'Microsoft.DesktopAppInstaller_*x64*' | Sort-Object -Property 'LastWriteTime' -Descending | Select-Object -First 1 -ExpandProperty 'FullName'
-Start-Process -FilePath `$wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'winget uninstall --silent $AppDisplayName'"
+Start-Process -FilePath `$wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'winget uninstall --silent $WinGetAppId'"
 $detectionscripttextBox.Text = "`$InstallerRegKey = Get-ChildItem 'HKLM:\SOFTWARE\Classes\Installer\Products' -Recurse | Get-ItemProperty | Where-Object {`$_ -like '*$WinGetAppSplit*'} 
 `$uninstallcheck = Get-ChildItem 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall' -Recurse | Get-ItemProperty | Where-Object {`$_ -like '*$WinGetAppSplit*'}
+`$softwareregpath = Get-ChildItem 'HKLM:\Software' | Where-Object {`$_.Name -like '*$AppDisplayName*'}
+Start-Sleep -Seconds 120
 If( (`$InstallerRegKey.PackageName.Length -gt 0) -or (`$uninstallcheck.DisplayName.Length -gt 0)){
 Write-Output '$AppDisplayName installed'
 Exit 0
@@ -359,4 +375,3 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK){
 
     
 }
-
