@@ -252,8 +252,8 @@ $browseButton.Add_Click({
 $uploadButton.Add_Click({
    #$WinGetAppId = $appIDtextBox.Text
    #$WinGetAppSplit = $WinGetAppId.Replace('.','*')
-    $TenantName = "TENANTNAME"
-    $AppPublisher = $TenantName.Split('.')[0].ToUpper()
+    $TenantName = "DOMAINNAMEHERE"
+    $AppPublisher = "winget"
     $AppDisplayName = $appNametextBox.Text
     $AppDescription = $desciptiontextBox.Text
     $AppDeveloper = $developertextBox.Text
@@ -304,6 +304,7 @@ $UninstallCommandLine = "PowerShell.exe -ExecutionPolicy Bypass -windowstyle hid
 $Win32App = Add-IntuneWin32App -FilePath "$destPath\Install.intunewin" -DisplayName $AppDisplayName -Description $AppDescription -Developer $AppDeveloper -Publisher $AppPublisher -InstallExperience system -RestartBehavior suppress -DetectionRule $DetectionRule -RequirementRule $RequirementRule -PrivacyURL $privacyurl -InformationURL $infourl -InstallCommandLine $InstallCommandLine -UninstallCommandLine $UninstallCommandLine -Icon $Icon -Verbose
 
 Add-IntuneWin32AppAssignmentAllUsers -ID $Win32App.id -Intent "available" -Notification "hideAll"
+
 $form.Refresh()
 })
 
@@ -351,14 +352,14 @@ $WinGetAppId = $appIDtextBox.Text
 $WinGetAppSplit = $WinGetAppId.Replace('.','*')
 $AppDisplayName = $appNametextBox.Text
 $installscripttextBox.Text = "`$WingetSystemPath = Get-ChildItem -Path 'C:\Program Files\WindowsApps' -Filter 'Microsoft.DesktopAppInstaller_*x64*' | Sort-Object -Property 'LastWriteTime' -Descending | Select-Object -First 1 -ExpandProperty 'FullName'
-Start-Process -FilePath `$wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'install --scope machine -h --accept-package-agreements --accept-source-agreements $WinGetAppId'"
+Start-Process -FilePath `$wingetSystemPath\winget.exe -ArgumentList 'install --scope machine -h --accept-package-agreements --accept-source-agreements $WinGetAppId'"
 $uninstalltextBox.Text = "`$WingetSystemPath = Get-ChildItem -Path 'C:\Program Files\WindowsApps' -Filter 'Microsoft.DesktopAppInstaller_*x64*' | Sort-Object -Property 'LastWriteTime' -Descending | Select-Object -First 1 -ExpandProperty 'FullName'
-Start-Process -FilePath `$wingetSystemPath\AppInstallerCLI.exe -ArgumentList 'winget uninstall --silent $WinGetAppId'"
+Start-Process -FilePath `$wingetSystemPath\winget.exe -ArgumentList 'winget uninstall --silent $WinGetAppId'"
 $detectionscripttextBox.Text = "`$InstallerRegKey = Get-ChildItem 'HKLM:\SOFTWARE\Classes\Installer\Products' -Recurse | Get-ItemProperty | Where-Object {`$_ -like '*$WinGetAppSplit*'} 
 `$uninstallcheck = Get-ChildItem 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall' -Recurse | Get-ItemProperty | Where-Object {`$_ -like '*$WinGetAppSplit*'}
 `$softwareregpath = Get-ChildItem 'HKLM:\Software' | Where-Object {`$_.Name -like '*$AppDisplayName*'}
-Start-Sleep -Seconds 120
-If( (`$InstallerRegKey.PackageName.Length -gt 0) -or (`$uninstallcheck.DisplayName.Length -gt 0)){
+Start-Sleep -Seconds 60
+If( (`$InstallerRegKey.PackageName.Length -gt 0) -or (`$uninstallcheck.DisplayName.Length -gt 0) -or (`$softwareregpath.Name -gt 0)){
 Write-Output '$AppDisplayName installed'
 Exit 0
 }Else{
@@ -375,3 +376,6 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK){
 
     
 }
+
+
+
