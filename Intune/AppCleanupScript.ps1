@@ -1,7 +1,7 @@
 #$DeviceIDPath = "HKLM:SOFTWARE\Microsoft\IntuneManagementExtension\SideCarPolicies\LogCollectionStatus"
 $UserAccountStatusPath = "HKLM:SOFTWARE\Microsoft\IntuneManagementExtension\SideCarPolicies\StatusServiceReports"
 $AppDataPath = "HKLM:SOFTWARE\Microsoft\IntuneManagementExtension\SideCarPolicies\AppData"
-$ContentPath = "HKLM:SOFTWARE\Microsoft\IntuneManagementExtension\SideCarPolicies\Content"
+$ContentPath = "HKLM:SOFTWARE\Microsoft\IntuneManagementExtension\Content"
 
 $Path = "HKLM:SOFTWARE\Microsoft\IntuneManagementExtension\Win32Apps"
 
@@ -29,8 +29,8 @@ $IntuneAppID = Get-ChildItem -Path $UserSID.PSPath
         if($appStatus -eq "Failed") {
 #For each user account, go through the associated failed apps list and remove the associated win32app list
         (Get-ChildItem -Path $Path\$UserSIDPathName) -Match $AppId | Remove-Item -Recurse -Force
-        (Get-ChildItem -Path $Path\$AppDataPath) -Match $AppId | Remove-Item -Recurse -Force
-        (Get-ChildItem -Path $Path\$ContentPath) -Match $AppId | Remove-Item -Recurse -Force
+        (Get-ChildItem -Path $AppDataPath) -Match $AppId | Remove-Item -Recurse -Force
+        (Get-ChildItem -Path $ContentPath) -Match $AppId | Remove-Item -Recurse -Force
         Get-Item -Path $UserAccountStatusPath\$UserSIDPathName\$AppId | Remove-Item -Recurse -Force
         }
 
